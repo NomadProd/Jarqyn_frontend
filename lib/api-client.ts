@@ -4,7 +4,7 @@
  * Handles authentication tokens, error management, and request/response formatting
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = "https://jarqyn-backend.onrender.com/";
 const TOKEN_KEY = "access_token";
 const TOKEN_TYPE_KEY = "token_type";
 const REFRESH_TOKEN_KEY = "refresh_token";
