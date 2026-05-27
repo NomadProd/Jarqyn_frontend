@@ -242,10 +242,9 @@ export default function AccountPage() {
   );
 
   const visibleOrders = useMemo(() => {
-    if (isAdmin) return orders;
     if (!user) return [];
     return orders.filter((order) => order.accountId === String(user.id));
-  }, [orders, user, isAdmin]);
+  }, [orders, user]);
 
   useEffect(() => {
     setEditorById((prev) => {
@@ -549,7 +548,7 @@ export default function AccountPage() {
             </div>
           </div>
 
-          <CheckoutProcess className="mb-14 border border-white/[0.08] bg-graphite/30" heading="Напоминание: три шага заказа" />
+          
 
           <section className="mb-12 border border-white/[0.08] bg-graphite/25 p-7 sm:p-8">
             <div className="mb-5 flex items-center gap-2 text-brass">

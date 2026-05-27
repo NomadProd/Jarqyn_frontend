@@ -716,9 +716,12 @@ function isOrderLineItem(item: unknown): item is OrderLineItem {
 }
 
 function legacyProductToLineItem(p: Product): OrderLineItem {
-  const cityId = p.cityPrints?.[0]?.city ?? "astana";
-  const color = p.colors[0] ?? "—";
-  const size = p.sizes[0] ?? "—";
+  const cityId =
+    (Array.isArray(p.cityPrints) && p.cityPrints.length > 0 && p.cityPrints[0]?.city) ??
+    (Array.isArray(defaultCityPrints) && defaultCityPrints[0]?.city) ??
+    "astana";
+  const color = Array.isArray(p.colors) && p.colors.length > 0 ? p.colors[0] : "—";
+  const size = Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes[0] : "—";
   return {
     productId: p.id,
     productName: p.title,
