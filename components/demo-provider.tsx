@@ -208,15 +208,22 @@ function mergeProductWithCurrentCatalog(base: Product, saved?: Product): Product
     ...saved,
     id: base.id,
     slug: base.slug,
+    title: base.title,
+    subtitle: base.subtitle,
+    price: base.price,
+    position: base.position,
     colors: base.colors,
     sizes: base.sizes,
     unavailableSizes: base.unavailableSizes,
     skuCode: base.skuCode,
     colorSkus: base.colorSkus,
+    image: base.image,
     imagesByColor: base.imagesByColor,
     backImageByColor: base.backImageByColor,
     cityPrints: base.cityPrints,
-    image: saved.image || base.image
+    description: base.description,
+    specifications: base.specifications,
+    composition: base.composition
   };
 }
 

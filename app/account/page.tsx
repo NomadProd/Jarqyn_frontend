@@ -14,7 +14,15 @@ import { CheckoutProcess } from "@/components/checkout-process";
 import { useDemoStore } from "@/components/demo-provider";
 import { compressImageToDataUrl } from "@/lib/client-image";
 import { cityLabelFromId } from "@/lib/city-catalog";
-import { authApi, tokenManager, cartApi, productVariantsApi, productsApi, type UserResponse } from "@/lib/api-client";
+import {
+  authApi,
+  tokenManager,
+  cartApi,
+  productVariantsApi,
+  productsApi,
+  categoriesApi,
+  type UserResponse
+} from "@/lib/api-client";
 import type { DemoOrder, OrderFulfillmentStatus } from "@/lib/demo-store";
 import { formatCurrency, Product } from "@/lib/demo-store";
 
@@ -200,18 +208,16 @@ export default function AccountPage() {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminPanel, setAdminPanel] = useState<"orders" | "inventory" | "products" | "ambassadors" | "site">("orders");
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
   const [profilePhone, setProfilePhone] = useState("");
   const [profilePhoneMessage, setProfilePhoneMessage] = useState("");
   const [newProduct, setNewProduct] = useState({
-    title: "",
-    subtitle: "",
-    position: "",
-    price: "",
-    colors: "",
-    sizes: "",
-    image: "",
-    composition: "",
-    videoSrc: ""
+    categoryId: "",
+    name: "",
+    description: "",
+    gender: "",
+    basePrice: "",
+    discountPrice: ""
   });
   const [editorById, setEditorById] = useState<Record<string, Omit<Product, "id">>>({});
 
@@ -235,6 +241,18 @@ export default function AccountPage() {
     };
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void (async () => {
+      const res = await categoriesApi.list();
+      if (res.ok && Array.isArray(res.data)) {
+        const nextCategories = res.data.map((row: any) => ({ id: Number(row.id), name: String(row.name ?? row.id) }));
+        setCategories(nextCategories);
+        setNewProduct((prev) => (prev.categoryId || !nextCategories.length ? prev : { ...prev, categoryId: String(nextCategories[0]!.id) }));
+      }
+    })();
+  }, [isAdmin]);
 
   const favoriteProducts = useMemo(
     () => products.filter((product) => favorites.includes(product.id)),
@@ -352,34 +370,56 @@ export default function AccountPage() {
 
   const handleAddProduct = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const price = Number(newProduct.price);
-    if (!newProduct.title.trim() || !newProduct.subtitle.trim() || !newProduct.position.trim() || Number.isNaN(price)) {
-      setMessage("Заполните обязательные поля позиции.");
+    const categoryId = Number(newProduct.categoryId);
+    const basePrice = Number(newProduct.basePrice);
+    const discountPrice = newProduct.discountPrice.trim() ? Number(newProduct.discountPrice) : null;
+    if (!categoryId || !newProduct.name.trim() || Number.isNaN(basePrice)) {
+      setMessage("Заполните категорию, название и базовую цену.");
       return;
     }
-    addProduct({
-      title: newProduct.title.trim(),
-      subtitle: newProduct.subtitle.trim(),
-      position: newProduct.position.trim(),
-      price,
-      colors: newProduct.colors.split(",").map((v) => v.trim()).filter(Boolean),
-      sizes: newProduct.sizes.split(",").map((v) => v.trim()).filter(Boolean),
-      image: newProduct.image.trim() || "/www/photos/solo/01.jpg",
-      composition: newProduct.composition.trim() || undefined,
-      videoSrc: newProduct.videoSrc.trim() || undefined
-    });
-    setNewProduct({
-      title: "",
-      subtitle: "",
-      position: "",
-      price: "",
-      colors: "",
-      sizes: "",
-      image: "",
-      composition: "",
-      videoSrc: ""
-    });
-    setMessage("Позиция добавлена.");
+
+    void (async () => {
+      const res = await productsApi.create({
+        category_id: categoryId,
+        name: newProduct.name.trim(),
+        description: newProduct.description.trim() || undefined,
+        brand: "Jarqyn",
+        gender: newProduct.gender.trim() || undefined,
+        base_price: basePrice,
+        discount_price: discountPrice,
+        is_active: true,
+        is_discount_active: false
+      });
+
+      if (!res.ok || !res.data) {
+        setMessage(res.error || res.message || "Не удалось создать товар.");
+        return;
+      }
+
+      const created = res.data as { name: string; description?: string; base_price: number };
+      const categoryLabel = categories.find((c) => c.id === categoryId)?.name ?? "Товар";
+      addProduct({
+        title: created.name,
+        subtitle: created.description || newProduct.description.trim() || "",
+        position: categoryLabel,
+        price: Number(created.base_price),
+        colors: ["Базовый"],
+        sizes: ["M"],
+        image: "/www/photos/solo/01.jpg",
+        description: created.description || newProduct.description.trim() || undefined,
+        specifications: newProduct.gender.trim() || undefined
+      });
+
+      setNewProduct({
+        categoryId: String(categoryId),
+        name: "",
+        description: "",
+        gender: "",
+        basePrice: "",
+        discountPrice: ""
+      });
+      setMessage("Товар создан в базе и добавлен в каталог.");
+    })();
   };
 
   const handleDroppedImage = async (
@@ -837,83 +877,84 @@ export default function AccountPage() {
               ) : adminPanel === "products" ? (
                 <div className="space-y-6">
                   <form onSubmit={handleAddProduct} className="grid gap-3 border border-white/[0.08] bg-ink/50 p-5 sm:grid-cols-2">
-                    <input
-                      value={newProduct.title}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, title: e.target.value }))}
-                      placeholder="Название"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.subtitle}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, subtitle: e.target.value }))}
-                      placeholder="Описание"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.position}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, position: e.target.value }))}
-                      placeholder="Категория"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.price}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, price: e.target.value }))}
-                      placeholder="Цена (₸)"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.colors}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, colors: e.target.value }))}
-                      placeholder="Цвета через запятую"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.sizes}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, sizes: e.target.value }))}
-                      placeholder="Размеры через запятую"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.composition}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, composition: e.target.value }))}
-                      placeholder="Состав"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.videoSrc}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, videoSrc: e.target.value }))}
-                      placeholder="Видео URL (/www/videos/...)"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      value={newProduct.image}
-                      onChange={(e) => setNewProduct((p) => ({ ...p, image: e.target.value }))}
-                      placeholder="Изображение URL"
-                      className={inputClass.replace("mt-2", "mt-0")}
-                    />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const dataUrl = await compressImageToDataUrl(file);
-                        setNewProduct((p) => ({ ...p, image: dataUrl }));
-                      }}
-                      className={`${inputClass.replace("mt-2", "mt-0")} file:mr-3 file:border-0 file:bg-fog file:px-3 file:py-1.5 file:font-display file:text-[10px] file:uppercase file:tracking-wider file:text-ink`}
-                    />
-                    <label
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => handleDroppedImage(e, (dataUrl) => setNewProduct((p) => ({ ...p, image: dataUrl })))}
-                      className="flex items-center justify-center border border-dashed border-white/25 bg-ink/40 px-4 py-6 text-center text-xs text-mist sm:col-span-2"
-                    >
-                      Перетащите изображение
+                    <label className="block font-display text-[10px] uppercase tracking-[0.18em] text-mist">
+                      Категория
+                      <select
+                        value={newProduct.categoryId}
+                        onChange={(e) => setNewProduct((p) => ({ ...p, categoryId: e.target.value }))}
+                        className={inputClass.replace("mt-2", "mt-0")}
+                      >
+                        <option value="">Выберите категорию</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
                     </label>
+                    <label className="block font-display text-[10px] uppercase tracking-[0.18em] text-mist">
+                      Имя
+                      <input
+                        value={newProduct.name}
+                        onChange={(e) => setNewProduct((p) => ({ ...p, name: e.target.value }))}
+                        placeholder="Например, Almaty Classic"
+                        className={inputClass.replace("mt-2", "mt-0")}
+                      />
+                    </label>
+                    <label className="block font-display text-[10px] uppercase tracking-[0.18em] text-mist sm:col-span-2">
+                      Описание
+                      <textarea
+                        value={newProduct.description}
+                        onChange={(e) => setNewProduct((p) => ({ ...p, description: e.target.value }))}
+                        placeholder="Короткое описание"
+                        rows={3}
+                        className={`${inputClass.replace("mt-2", "mt-0")} resize-none`}
+                      />
+                    </label>
+                    <label className="block font-display text-[10px] uppercase tracking-[0.18em] text-mist">
+                      Gender
+                      <input
+                        value={newProduct.gender}
+                        onChange={(e) => setNewProduct((p) => ({ ...p, gender: e.target.value }))}
+                        placeholder="Unisex"
+                        className={inputClass.replace("mt-2", "mt-0")}
+                      />
+                    </label>
+                    <label className="block font-display text-[10px] uppercase tracking-[0.18em] text-mist">
+                      Base price
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={newProduct.basePrice}
+                        onChange={(e) => setNewProduct((p) => ({ ...p, basePrice: e.target.value }))}
+                        placeholder="0"
+                        className={inputClass.replace("mt-2", "mt-0")}
+                      />
+                    </label>
+                    <label className="block font-display text-[10px] uppercase tracking-[0.18em] text-mist">
+                      Discount price
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={newProduct.discountPrice}
+                        onChange={(e) => setNewProduct((p) => ({ ...p, discountPrice: e.target.value }))}
+                        placeholder="Optional"
+                        className={inputClass.replace("mt-2", "mt-0")}
+                      />
+                    </label>
+                    <div className="sm:col-span-2">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-mist">Defaults</p>
+                      <p className="mt-1 text-xs text-mist">
+                        Brand: Jarqyn, active: true, discount active: false.
+                      </p>
+                    </div>
                     <button
                       type="submit"
                       className="focus-ring sm:col-span-2 border border-fog bg-fog py-3 font-display text-[11px] uppercase tracking-[0.22em] text-ink transition-colors hover:bg-transparent hover:text-fog"
                     >
-                      Добавить позицию
+                      Создать товар
                     </button>
                   </form>
 

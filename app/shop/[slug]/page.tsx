@@ -10,7 +10,6 @@ import { SiteHeader } from "@/components/site-header";
 import { CheckoutProcess } from "@/components/checkout-process";
 import { CitySelector } from "@/components/city-selector";
 import { useDemoStore } from "@/components/demo-provider";
-import { cityLabelFromId, cityPrintById } from "@/lib/city-catalog";
 import { cartApi, productVariantsApi } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/demo-store";
 import { computeLineSku } from "@/lib/order-utils";
@@ -34,8 +33,8 @@ export default function ProductPage() {
   const [openSection, setOpenSection] = useState<"description" | "specifications" | "size-chart" | null>("description");
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedImage, setSelectedImage] = useState("");
-  const [printLoadFailed, setPrintLoadFailed] = useState(false);
   const [stockMessage, setStockMessage] = useState("");
+  const printLoadFailed = false;
 
   const product = useMemo(
     () => products.find((item) => item.id === slug || item.slug === slug),
@@ -48,21 +47,12 @@ export default function ProductPage() {
   const fallbackBackImage = imagesForColor.length > 1 ? imagesForColor[imagesForColor.length - 1] : undefined;
   const backImage = product?.backImageByColor?.[selectedColor] ?? fallbackBackImage;
   const galleryImages = backImage && !imagesForColor.includes(backImage) ? [...imagesForColor, backImage] : imagesForColor;
-  const isBackViewSelected = Boolean(backImage && selectedImage === backImage);
   const isSchoolUnityProduct = product?.id === "school-unity" || product?.title === "School Unity";
-
-  const printSrc = useMemo(() => {
-    if (!product || !isSchoolUnityProduct) return undefined;
-    return (
-      product.cityPrints?.find((item) => item.city === selectedCityId)?.image ?? cityPrintById(selectedCityId)?.imageSrc
-    );
-  }, [product, selectedCityId, isSchoolUnityProduct]);
 
   useEffect(() => {
     if (!product) return;
     setSelectedColor(initialColor);
     setSelectedImage((product.imagesByColor?.[initialColor] ?? [product.image])[0] ?? product.image);
-    setPrintLoadFailed(false);
   }, [product, initialColor]);
 
   useEffect(() => {
@@ -176,15 +166,6 @@ export default function ProductPage() {
                 alt={`${product.title}, ${selectedColor || initialColor || "базовый цвет"}`}
                 className="h-full w-full object-cover"
               />
-              {isSchoolUnityProduct && isBackViewSelected && printSrc && !printLoadFailed ? (
-                // Overlay only on back-view to mimic print placement on the back side.
-                <img
-                  src={printSrc}
-                  alt={`Принт города ${cityLabelFromId(selectedCityId)} на спине`}
-                  className="pointer-events-none absolute left-1/2 top-[39%] w-[32%] max-w-[17rem] -translate-x-1/2 -translate-y-1/2 object-contain mix-blend-normal"
-                  onError={() => setPrintLoadFailed(true)}
-                />
-              ) : null}
             </motion.div>
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent lg:bg-gradient-to-r" aria-hidden />
           </div>
@@ -222,11 +203,11 @@ export default function ProductPage() {
                     <button
                       key={color}
                       type="button"
-                      onClick={() => {
-                        setSelectedColor(color);
-                        setStockMessage("");
-                        const nextImages = product.imagesByColor?.[color] ?? [product.image];
-                        setSelectedImage(nextImages[0] ?? product.image);
+                    onClick={() => {
+                      setSelectedColor(color);
+                      setStockMessage("");
+                      const nextImages = product.imagesByColor?.[color] ?? [product.image];
+                      setSelectedImage(nextImages[0] ?? product.image);
                       }}
                       className={`focus-ring border px-4 py-2.5 font-display text-[11px] uppercase tracking-[0.18em] transition-colors ${
                         active ? "border-fog bg-fog text-ink" : "border-white/[0.14] text-fog hover:border-fog/40"
@@ -308,9 +289,7 @@ export default function ProductPage() {
                     value={selectedCityId}
                     onChange={(id) => {
                       setSelectedCityId(id);
-                      setPrintLoadFailed(false);
                       setStockMessage("");
-                      if (backImage) setSelectedImage(backImage);
                     }}
                   />
                 </div>

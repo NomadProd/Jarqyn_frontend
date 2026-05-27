@@ -415,17 +415,16 @@ export const defaultProducts: Product[] = [
   {
     id: "almaty-classic",
     slug: "almaty-classic",
-    title: "Almaty Classic",
+    title: "КОАЧ ДЖЕКЕТ",
     subtitle: "Тишина формы. Темп города.",
     price: 21990,
     colors: ["Тёмно-синий", "Чёрный",],
-    sizes: ["S", "M", "L"],
-    unavailableSizes: ["L"],
+    sizes: ["S", "M", "L", "XL"],
     position: "Верхняя одежда",
     image: "/www/photos/solo/01.jpg",
     imagesByColor: {
-      "Тёмно-синий": ["/www/photos/solo/03.jpg", "/www/photos/solo/05.jpg", "/www/photos/solo/06.jpg"],
-      "Чёрный": ["/www/photos/solo/01.jpg", "/www/photos/solo/02.jpg", "/www/photos/solo/04.jpg"]
+      "Тёмно-синий": ["/www/photos/solo/01.jpg", "/www/photos/solo/04.jpg"],
+      "Чёрный": ["/www/photos/solo/01.jpg", "/www/photos/solo/04.jpg"]
     },
     customizable: true,
     skuCode: "04",
@@ -434,7 +433,7 @@ export const defaultProducts: Product[] = [
       "Чёрный": "042"
     },
     cityPrints: defaultCityPrints,
-    description: "Оверсайз-пальто для межсезонья с чистым силуэтом и плотной посадкой по плечам.",
+    description: "Оверсайз-пальто для межсезонья с чистым силуэтом и плотной посадкой по плечам.\nНа спине — знак единства с года основания, под воротником — третья строка гимна. абсолютный универсал для школы, выездов и улицы.",
     specifications: "Силуэт: прямой. Подклад: вискоза. Детали: потайные пуговицы, внутренний карман.",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Талия (см)", "Бёдра (см)"],
@@ -444,13 +443,13 @@ export const defaultProducts: Product[] = [
         ["L", "98-104", "78-84", "102-108"]
       ]
     },
-    composition: "80% шерсть, 20% полиэстер. Сухая чистка.",
+    composition: "regular fit, silentwear, 100% хлопок",
     videoSrc: "/www/videos/story.mov"
   },
   {
     id: "steppe-crest",
     slug: "steppe-crest",
-    title: "Steppe Crest",
+    title: "ПОЛУЗАМОК",
     subtitle: "Мягкий слой для долгих дней и ясных целей.",
     price: 17990,
     colors: ["Темно-синий", "Черный", "Тёмно-зелёный"],
@@ -458,9 +457,9 @@ export const defaultProducts: Product[] = [
     position: "Трикотаж",
     image: "/www/photos/solo/03.jpg",
     imagesByColor: {
-      "Темно-синий": ["/www/photos/solo/03.jpg", "/www/photos/solo/07.jpg", "/www/photos/solo/08.jpg"],
-      "Черный": ["/www/photos/solo/03.jpg", "/www/photos/solo/07.jpg", "/www/photos/solo/08.jpg"],
-      "Тёмно-зелёный": ["/www/photos/solo/09.jpg", "/www/photos/solo/10.jpg", "/www/photos/solo/11.jpg"]
+      "Темно-синий": ["/www/photos/solo/03.jpg", "/www/photos/team/01.jpg"],
+      "Черный": ["/www/photos/solo/03.jpg", "/www/photos/team/01.jpg"],
+      "Тёмно-зелёный": ["/www/photos/solo/03.jpg", "/www/photos/team/01.jpg"]
     },
     customizable: true,
     skuCode: "05",
@@ -470,8 +469,8 @@ export const defaultProducts: Product[] = [
       "Тёмно-зелёный": "053"
     },
     cityPrints: defaultCityPrints,
-    description: "Плотный свитшот из смесовой пряжи для базовых и многослойных образов.",
-    specifications: "Ворот: круглый. Манжеты: эластичные. Посадка: regular.",
+    description: "Плотный свитшот из смесовой пряжи для базовых и многослойных образов. Символ “Шексіз Өркен”, на воротнике — четвёртая строка гимна, удобное и официальное дополнение к пиджаку.",
+    specifications: "regular fit, 100% хлопок",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Длина (см)", "Рукав (см)"],
       rows: [
@@ -487,22 +486,22 @@ export const defaultProducts: Product[] = [
   {
     id: "school-unity",
     slug: "school-unity",
-    title: "School Unity",
+    title: "Худи",
     subtitle: "Единый ритм поколения — без шума, только присутствие.",
     price: 18990,
     colors: ["Темно-синий", "Чёрный", "Темно-зеленый"],
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     position: "Худи",
-    image: "/www/photos/team/01.jpg",
+    image: "/www/photos/solo/07.jpg",
     imagesByColor: {
-      "Темно-синий": ["/www/photos/team/01.jpg", "/www/photos/team/02.jpg", "/www/photos/team/03.jpg"],
-      "Чёрный": ["/www/photos/team/04.jpg", "/www/photos/team/05.jpg", "/www/photos/team/06.jpg"],
-      "Темно-зеленый": ["/www/photos/team/04.jpg", "/www/photos/team/05.jpg", "/www/photos/team/06.jpg"]
+      "Темно-синий": ["/www/photos/solo/07.jpg", "/www/photos/solo/08.jpg"],
+      "Чёрный": ["/www/photos/solo/07.jpg", "/www/photos/solo/08.jpg"],
+      "Темно-зеленый": ["/www/photos/solo/07.jpg",  "/www/photos/solo/08.jpg"]
     },
     backImageByColor: {
-      "Темно-синий": "/www/photos/team/03.jpg",
-      "Черный": "/www/photos/team/03.jpg",
-      "Темно-зеленый": "/www/photos/team/06.jpg"
+      "Темно-синий": "/www/photos/solo/08.jpg",
+      "Черный": "/www/photos/solo/08.jpg",
+      "Темно-зеленый": "/www/photos/solo/08.jpg"
     },
     customizable: true,
     skuCode: "06",
@@ -512,8 +511,8 @@ export const defaultProducts: Product[] = [
       "Темно-зеленый": "063"
     },
     cityPrints: defaultCityPrints,
-    description: "Худи свободного кроя с мягкой изнанкой для ежедневного ритма кампуса и города.",
-    specifications: "Капюшон: двойной. Карман: кенгуру. Низ: эластичная резинка.",
+    description: "Худи свободного кроя с мягкой изнанкой для ежедневного ритма кампуса и города. на груди — крупный символ “Шексіз Өркен” — знак бесконечного процветания, на спине — карта Казахстана с 20 городами: 18 белых (действующие НЗМ), 2 серых (потенциальные), город покупателя выделяется красной меткой. на капюшоне — пятая строка гимна. престиж вне школы.",
+    specifications: "Oversize, 100% хлопок  .",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Длина (см)"],
       rows: [
@@ -522,26 +521,26 @@ export const defaultProducts: Product[] = [
         ["XL", "108-114", "72"]
       ]
     },
-    composition: "Хлопок френч терри. Стирка 30°C, без отбеливателя."
+    composition: "Oversize, 100% хлопок"
   },
   {
     id: "scholar-core",
     slug: "scholar-core",
-    title: "Scholar Core",
+    title: "ПОЛО",
     subtitle: "База под всё: олимпиады, проекты, старт.",
     price: 10990,
     colors: ["Белый"],
     sizes: ["S", "M", "L", "XL"],
     position: "Футболки",
-    image: "/www/photos/team/12.jpg",
+    image: "/www/photos/team/03.jpg",
     imagesByColor: {
-      "Белый": ["/www/photos/team/12.jpg", "/www/photos/team/13.jpg", "/www/photos/team/14.jpg"]
+      "Белый": ["/www/photos/team/03.jpg", "/www/photos/team/13.jpg", "/www/photos/team/14.jpg"]
     },
     customizable: true,
     skuCode: "03",
     cityPrints: defaultCityPrints,
-    description: "Плотная футболка с формоустойчивым воротом и прямым силуэтом.",
-    specifications: "Плотность: 220 gsm. Посадка: regular. Швы: усиленные.",
+    description: "Плотная футболка с формоустойчивым воротом и прямым силуэтом. Тёмно-зелёная окантовка, под воротником – вторая строка гимна. в теплый сезон. ",
+    specifications: "Regular fit, 92% хлопок, 8% спандекс",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Длина (см)"],
       rows: [
@@ -556,22 +555,21 @@ export const defaultProducts: Product[] = [
   {
     id: "astana-line",
     slug: "astana-line",
-    title: "Astana Line",
+    title: "МУЖСКАЯ РУБАШКА",
     subtitle: "Чистые линии и гибкая многослойность.",
     price: 14990,
-    colors: ["Белый", "Молочный"],
-    sizes: ["S", "M", "L"],
+    colors: ["Белый"],
+    sizes: ["S", "M", "L", "XL"],
     position: "Рубашки",
-    image: "/www/photos/solo/12.jpg",
+    image: "/www/photos/solo/06.jpg",
     imagesByColor: {
-      "Белый": ["/www/photos/solo/12.jpg", "/www/photos/solo/13.jpg"],
-      "Молочный": ["/www/photos/solo/14.jpg", "/www/photos/solo/15.jpg"]
+      "Белый": ["/www/photos/solo/06.jpg"]
     },
     customizable: true,
     skuCode: "01",
     cityPrints: defaultCityPrints,
-    description: "Рубашка из мягкой смесовой ткани с чёткой линией плеч.",
-    specifications: "Манжета: классическая. Силуэт: прямой.",
+    description: "Жаккардовые элементы, на рукавах первая строка гимна, на спине ценности НИШ — основа школьной формы.",
+    specifications: "regular fit, 92% хлопок, 8% спандекс",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Талия (см)"],
       rows: [
@@ -584,45 +582,44 @@ export const defaultProducts: Product[] = [
   {
     id: "nomad-track",
     slug: "nomad-track",
-    title: "Nomad Track",
-    subtitle: "Лёгкий комплект для поездок и движения.",
-    price: 51900,
-    colors: ["Темно-синий", "Песочный"],
-    sizes: ["M", "L", "XL"],
-    unavailableSizes: ["XL"],
-    position: "Брюки",
-    image: "/www/photos/team/18.jpg",
+    title: "ЖЕНСКАЯ РУБАШКА",
+    subtitle: "Чистые линии и гибкая многослойность.",
+    price: 14990,
+    colors: ["Белый"],
+    sizes: ["S", "M", "L", "XL"],
+    position: "Рубашки",
+    image: "/www/photos/solo/05.jpg",
     imagesByColor: {
-      "Синий": ["/www/photos/team/18.jpg", "/www/photos/team/19.jpg"],
-      "Песочный": ["/www/photos/team/20.jpg", "/www/photos/team/21.jpg"]
+      "Белый": ["/www/photos/solo/05.jpg"]
     },
     customizable: true,
+    skuCode: "02",
     cityPrints: defaultCityPrints,
-    description: "Брюки с комфортной талией и заужением к низу.",
-    specifications: "Посадка: средняя. Карманы: 4. Ткань: дышащая.",
+    description: "жаккардовые элементы, на рукавах первая строка гимна, на спине ценности НИШ — основа школьной формы.",
+    specifications: "regular fit, 92% хлопок, 8% спандекс",
     sizeChart: {
-      headers: ["Размер", "Талия (см)", "Бёдра (см)", "Длина (см)"],
+      headers: ["Размер", "Грудь (см)", "Талия (см)"],
       rows: [
-        ["M", "74-80", "94-100", "102"],
-        ["L", "80-86", "100-106", "104"],
-        ["XL", "86-92", "106-112", "106"]
+        ["S", "88-94", "70-76"],
+        ["M", "94-100", "76-82"],
+        ["L", "100-106", "82-88"]
       ]
     }
   },
   {
     id: "aurora-knit",
     slug: "aurora-knit",
-    title: "Aurora Knit",
+    title: "КАРДИГАН",
     subtitle: "Тёплый минимализм с мягкой фактурой.",
     price: 18990,
     colors: ["Темно-синий", "Черный", "Белый"],
     sizes: ["S", "M", "L", "XL"],
     position: "Трикотаж",
-    image: "/www/photos/solo/16.jpg",
+    image: "/www/photos/solo/09.jpg",
     imagesByColor: {
-      "Темно-синий": ["/www/photos/solo/16.jpg", "/www/photos/solo/17.jpg"],
-      "Черный": ["/www/photos/solo/18.jpg", "/www/photos/solo/01.jpg"],
-      "Белый": ["/www/photos/solo/18.jpg", "/www/photos/solo/01.jpg"]
+      "Темно-синий": ["/www/photos/solo/09.jpg", "/www/photos/team/04.jpg"],
+      "Черный": ["/www/photos/solo/09.jpg", "/www/photos/team/04.jpg"],
+      "Белый": ["/www/photos/solo/09.jpg", "/www/photos/team/04.jpg"]
     },
     customizable: true,
     skuCode: "07",
@@ -632,8 +629,8 @@ export const defaultProducts: Product[] = [
       "Белый": "073",
     },
     cityPrints: defaultCityPrints,
-    description: "Трикотажный джемпер для прохладных дней и многослойных образов.",
-    specifications: "Пряжа: смесовая. Горловина: эластичная.",
+    description: "Минималистичный силуэт без надписей, тёплая и удобная альтернатива школьному пиджаку.",
+    specifications: "Loose fit, 100% хлопок",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Длина (см)", "Рукав (см)"],
       rows: [
@@ -647,15 +644,15 @@ export const defaultProducts: Product[] = [
   {
     id: "city-shell",
     slug: "city-shell",
-    title: "City Shell",
+    title: "ВЕТРОВКА",
     subtitle: "Ветровка для переменчивой погоды мегаполиса.",
     price: 17990,
     colors: ["Темно-синий"],
-    sizes: ["S", "M", "L"],
+    sizes: ["S", "M", "L", "XL"],
     position: "Верхняя одежда",
     image: "/www/photos/team/22.jpg",
     imagesByColor: {
-      "Темно-синий": ["/www/photos/team/22.jpg", "/www/photos/team/11.jpg"]
+      "Темно-синий": ["/www/photos/team/22.jpg", "/www/photos/team/04.jpg"]
     },
     customizable: true,
     skuCode: "08",
