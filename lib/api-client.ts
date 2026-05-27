@@ -366,6 +366,18 @@ export const addressesApi = {
 };
 
 export const ordersApi = {
+  list: async (): Promise<ApiResponse<any[]>> => {
+    return request("/orders", {
+      method: "GET"
+    });
+  },
+
+  getById: async (orderId: string | number): Promise<ApiResponse<any>> => {
+    return request(`/orders/${orderId}`, {
+      method: "GET"
+    });
+  },
+
   create: async (payload: { delivery_address_id: number; notes?: string; source_id?: number }) => {
     return request("/orders", {
       method: "POST",
@@ -380,6 +392,12 @@ export const ordersApi = {
     return request(`/orders/${orderId}`, {
       method: "PATCH",
       body: JSON.stringify(payload)
+    });
+  },
+
+  delete: async (orderId: string | number): Promise<ApiResponse<any>> => {
+    return request(`/orders/${orderId}`, {
+      method: "DELETE"
     });
   }
 };

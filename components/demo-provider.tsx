@@ -582,7 +582,6 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
               uid = String(currentUserRes.data.id);
             }
           }
-          const accountId = uid || "unknown";
           // Persist address to backend first
           const addrPayload = {
             region: payload.shippingAddress.region,
@@ -604,36 +603,11 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
           if (!orderRes.ok || !orderRes.data) {
             throw new Error(orderRes.error || "Не удалось создать заказ");
           }
-          const { orderId, createdAt } = orderRes.data as { orderId: string; createdAt: string };
+          const { orderId } = orderRes.data as { orderId: string; createdAt: string };
 
           setState((prev) => {
-            const items: OrderLineItem[] = prev.cart.map(({ lineId: _lineId, ...rest }) => ({ ...rest }));
-            const deduct = deductInventoryForLines(prev.inventory, items);
-            if (!deduct.ok) return prev;
-
-            const total = items.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
-            const draft: DemoOrder = {
-              id: orderId,
-              accountId: accountId,
-              customerFullName: payload.customerFullName.trim(),
-              phone,
-              shippingAddress: payload.shippingAddress,
-              nisSchool: payload.nisSchool?.trim() || undefined,
-              customerSource: payload.customerSource,
-              items,
-              total,
-              createdAt,
-              status: "processing",
-              paymentStatus: "pending",
-              tracking: createTracking("processing"),
-              stockProcessed: true
-            };
-            const order = normalizeDemoOrder(draft);
-
             return {
               ...prev,
-              inventory: deduct.next,
-              orders: [order, ...prev.orders],
               cart: [],
               accounts: prev.accounts.map((a) => (a.id === uid ? { ...a, phone } : a)),
               user: prev.user ? { ...prev.user, phone } : null

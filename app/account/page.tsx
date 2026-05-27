@@ -1,6 +1,6 @@
 "use client";
 
-import { DragEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { DragEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
@@ -18,13 +18,15 @@ import {
   authApi,
   tokenManager,
   cartApi,
+  ordersApi,
   productVariantsApi,
   productsApi,
   categoriesApi,
   type UserResponse
 } from "@/lib/api-client";
 import type { DemoOrder, OrderFulfillmentStatus } from "@/lib/demo-store";
-import { formatCurrency, Product } from "@/lib/demo-store";
+import { createTracking, formatCurrency, Product } from "@/lib/demo-store";
+import { CITY_PRINT_ASSETS } from "@/lib/city-catalog";
 
 async function loadBackendCartAfterLogin(
   syncCartLineWithBackend: (sku: string, variantId: number, backendItemId: number, quantity: number) => void,
@@ -180,14 +182,67 @@ function AdminOrderControls({
   );
 }
 
+function inferCityIdFromSku(sku?: string | null) {
+  if (!sku) return "";
+  const cityCode = CITY_PRINT_ASSETS.find((city) => sku.startsWith(city.skuCode));
+  return cityCode?.id ?? "";
+}
+
+function normalizeBackendOrder(row: any): DemoOrder {
+  const rawStatus = String(row?.status ?? "processing");
+  const status: OrderFulfillmentStatus =
+    rawStatus === "shipped" || rawStatus === "delivered" || rawStatus === "cancelled"
+      ? rawStatus
+      : "processing";
+  const address = row?.delivery_address;
+  const user = row?.user;
+  const firstName = String(user?.name ?? "").trim();
+  const lastName = String(user?.surname ?? "").trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+
+  return {
+    id: String(row?.id ?? ""),
+    accountId: String(row?.user_id ?? user?.id ?? ""),
+    customerFullName: fullName,
+    phone: String(user?.phone ?? ""),
+    shippingAddress: {
+      region: String(address?.region ?? ""),
+      city: String(address?.city ?? ""),
+      street: String(address?.street ?? ""),
+      house: String(address?.house ?? ""),
+      apartment: String(address?.apartment ?? ""),
+      postalCode: String(address?.postal_code ?? "")
+    },
+    items: Array.isArray(row?.items)
+      ? row.items.map((item: any) => {
+          const sku = String(item?.sku ?? item?.variant_id ?? "");
+          return {
+            productId: String(item?.product_id ?? item?.variant_id ?? ""),
+            productName: String(item?.product_name ?? ""),
+            sku,
+            color: String(item?.color ?? ""),
+            size: String(item?.size ?? ""),
+            selectedCityId: inferCityIdFromSku(sku),
+            quantity: Number(item?.quantity ?? 1),
+            image: "/www/photos/solo/01.jpg",
+            unitPrice: Number(item?.price_at_purchase ?? 0),
+            variantId: Number(item?.variant_id ?? 0) || undefined
+          };
+        })
+      : [],
+    total: Number(row?.total_price ?? 0),
+    createdAt: String(row?.created_at ?? new Date().toISOString()),
+    status,
+    paymentStatus: row?.payment_status === "completed" ? "paid" : "pending",
+    tracking: createTracking(status),
+    stockProcessed: row?.payment_status === "completed"
+  };
+}
+
 export default function AccountPage() {
   const {
     favorites,
-    orders,
     products,
-    markOrderPaid,
-    updateOrderAdminFields,
-    deleteOrder,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -207,6 +262,9 @@ export default function AccountPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [backendOrders, setBackendOrders] = useState<DemoOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersMessage, setOrdersMessage] = useState("");
   const [adminPanel, setAdminPanel] = useState<"orders" | "inventory" | "products" | "ambassadors" | "site">("orders");
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
   const [profilePhone, setProfilePhone] = useState("");
@@ -221,6 +279,25 @@ export default function AccountPage() {
   });
   const [editorById, setEditorById] = useState<Record<string, Omit<Product, "id">>>({});
 
+  const loadOrders = useCallback(async () => {
+    const token = tokenManager.getToken();
+    if (!token) {
+      setBackendOrders([]);
+      return;
+    }
+
+    setOrdersLoading(true);
+    setOrdersMessage("");
+    const res = await ordersApi.list();
+    if (res.ok && Array.isArray(res.data)) {
+      setBackendOrders(res.data.map(normalizeBackendOrder));
+    } else {
+      setBackendOrders([]);
+      setOrdersMessage(res.error || res.message || "Failed to load orders from backend.");
+    }
+    setOrdersLoading(false);
+  }, []);
+
   // Check if user is logged in on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -231,16 +308,18 @@ export default function AccountPage() {
           setUser(response.data);
           setIsAdmin(response.data.role === "admin");
           setProfilePhone(response.data.phone || "");
+          void loadOrders();
         } else {
           // Token invalid, clear it
           tokenManager.clearToken();
           setUser(null);
           setIsAdmin(false);
+          setBackendOrders([]);
         }
       }
     };
     checkAuth();
-  }, []);
+  }, [loadOrders]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -261,13 +340,13 @@ export default function AccountPage() {
 
   const personalOrders = useMemo(() => {
     if (!user) return [];
-    return orders.filter((order) => order.accountId === String(user.id));
-  }, [orders, user]);
+    return backendOrders;
+  }, [backendOrders, user]);
 
   const adminOrders = useMemo(() => {
     if (!isAdmin) return [];
-    return orders;
-  }, [orders, isAdmin]);
+    return backendOrders;
+  }, [backendOrders, isAdmin]);
 
   useEffect(() => {
     setEditorById((prev) => {
@@ -359,11 +438,47 @@ export default function AccountPage() {
     }
   };
 
+  const updateOrderAdminFields = async (
+    orderId: string,
+    patch: Partial<Pick<DemoOrder, "status" | "cancelReason" | "closedDate">>
+  ) => {
+    setOrdersMessage("");
+    const res = await ordersApi.update(orderId, {
+      status: patch.status
+    });
+    if (!res.ok) {
+      setOrdersMessage(res.error || res.message || "Failed to update order.");
+      return;
+    }
+    await loadOrders();
+  };
+
+  const markOrderPaid = async (orderId: string) => {
+    setOrdersMessage("");
+    const res = await ordersApi.update(orderId, { payment_status: "completed" });
+    if (!res.ok) {
+      setOrdersMessage(res.error || res.message || "Failed to mark order paid.");
+      return;
+    }
+    await loadOrders();
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    setOrdersMessage("");
+    const res = await ordersApi.delete(orderId);
+    if (!res.ok) {
+      setOrdersMessage(res.error || res.message || "Failed to delete order.");
+      return;
+    }
+    await loadOrders();
+  };
+
   const handleSignOut = async () => {
     await authApi.logout();
     clearCart();
     setUser(null);
     setIsAdmin(false);
+    setBackendOrders([]);
     setMessage("");
     router.push("/");
   };
@@ -624,6 +739,8 @@ export default function AccountPage() {
               <Wallet className="h-4 w-4" />
               <h2 className="font-display text-lg uppercase tracking-tight">Заказы и оплата</h2>
             </div>
+            {ordersLoading ? <p className="text-sm text-mist">Loading orders from backend...</p> : null}
+            {ordersMessage ? <p className="text-sm text-red-200">{ordersMessage}</p> : null}
             <div className="space-y-4">
               {personalOrders.map((order, orderIndex) => (
                 <motion.article
@@ -662,7 +779,6 @@ export default function AccountPage() {
                   <p className="mt-2 font-display text-[10px] uppercase tracking-[0.22em] text-mist">
                     Оплата: {order.paymentStatus === "paid" ? "получена " : "ожидает оплату"}
                   </p>
-                  
                 </motion.article>
               ))}
             </div>
@@ -742,6 +858,8 @@ export default function AccountPage() {
                       <Wallet className="h-4 w-4" />
                       <h3 className="font-display text-lg uppercase tracking-tight">Заказы</h3>
                     </div>
+                    {ordersLoading ? <p className="text-sm text-mist">Loading orders from backend...</p> : null}
+                    {ordersMessage ? <p className="text-sm text-red-200">{ordersMessage}</p> : null}
                     <div className="space-y-4">
                       {adminOrders.map((order, orderIndex) => (
                         <motion.article
