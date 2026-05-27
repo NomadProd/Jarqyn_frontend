@@ -241,10 +241,15 @@ export default function AccountPage() {
     [favorites, products]
   );
 
-  const visibleOrders = useMemo(() => {
+  const personalOrders = useMemo(() => {
     if (!user) return [];
     return orders.filter((order) => order.accountId === String(user.id));
   }, [orders, user]);
+
+  const adminOrders = useMemo(() => {
+    if (!isAdmin) return [];
+    return orders;
+  }, [orders, isAdmin]);
 
   useEffect(() => {
     setEditorById((prev) => {
@@ -580,7 +585,7 @@ export default function AccountPage() {
               <h2 className="font-display text-lg uppercase tracking-tight">Заказы и оплата</h2>
             </div>
             <div className="space-y-4">
-              {visibleOrders.map((order, orderIndex) => (
+              {personalOrders.map((order, orderIndex) => (
                 <motion.article
                   key={order.id}
                   initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
@@ -615,27 +620,9 @@ export default function AccountPage() {
                     ))}
                   </ul>
                   <p className="mt-2 font-display text-[10px] uppercase tracking-[0.22em] text-mist">
-                    Оплата: {order.paymentStatus === "paid" ? "получена (демо)" : "ожидает Robokassa"}
+                    Оплата: {order.paymentStatus === "paid" ? "получена " : "ожидает оплату"}
                   </p>
-                  {isAdmin && order.paymentStatus === "pending" && (
-                    <button
-                      type="button"
-                      onClick={() => markOrderPaid(order.id)}
-                      className="focus-ring mt-4 border border-fog bg-fog px-5 py-2 font-display text-[10px] uppercase tracking-[0.22em] text-ink transition-colors hover:bg-transparent hover:text-fog"
-                    >
-                      Отметить оплаченным
-                    </button>
-                  )}
-                  {isAdmin ? (
-                    <AdminOrderControls
-                      orderId={order.id}
-                      status={order.status}
-                      cancelReason={order.cancelReason}
-                      closedDate={order.closedDate}
-                      onSave={updateOrderAdminFields}
-                      onDelete={deleteOrder}
-                    />
-                  ) : null}
+                  
                 </motion.article>
               ))}
             </div>
@@ -647,7 +634,7 @@ export default function AccountPage() {
               <h2 className="font-display text-lg uppercase tracking-tight">Трекинг</h2>
             </div>
             <div className="space-y-6">
-              {visibleOrders.map((order, orderIndex) => (
+              {personalOrders.map((order, orderIndex) => (
                 <motion.article
                   key={`track-${order.id}`}
                   initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 14 }}
@@ -716,7 +703,7 @@ export default function AccountPage() {
                       <h3 className="font-display text-lg uppercase tracking-tight">Заказы</h3>
                     </div>
                     <div className="space-y-4">
-                      {visibleOrders.map((order, orderIndex) => (
+                      {adminOrders.map((order, orderIndex) => (
                         <motion.article
                           key={order.id}
                           initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
@@ -787,7 +774,7 @@ export default function AccountPage() {
                       <h3 className="font-display text-lg uppercase tracking-tight">Трекинг</h3>
                     </div>
                     <div className="space-y-6">
-                      {visibleOrders.map((order, orderIndex) => (
+                      {adminOrders.map((order, orderIndex) => (
                         <motion.article
                           key={`track-${order.id}`}
                           initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 14 }}
