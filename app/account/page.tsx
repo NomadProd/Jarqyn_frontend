@@ -184,7 +184,8 @@ function AdminOrderControls({
 
 function inferCityIdFromSku(sku?: string | null) {
   if (!sku) return "";
-  const cityCode = CITY_PRINT_ASSETS.find((city) => sku.startsWith(city.skuCode));
+  const citySkuCode = sku.slice(-2);
+  const cityCode = CITY_PRINT_ASSETS.find((city) => city.skuCode === citySkuCode);
   return cityCode?.id ?? "";
 }
 

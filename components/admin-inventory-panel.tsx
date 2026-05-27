@@ -1,41 +1,44 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useDemoStore } from "@/components/demo-provider";
-import { productVariantsApi, apiGet } from "@/lib/api-client";
+import { productVariantsApi, productsApi } from "@/lib/api-client";
 import { CITY_PRINT_ASSETS, cityLabelFromId } from "@/lib/city-catalog";
-import { resolveProductFromRef, type StockPositionInput } from "@/lib/inventory-sync";
-import type { Product } from "@/lib/demo-store";
-import { computeLineSku } from "@/lib/order-utils";
+import type { StockPositionInput } from "@/lib/inventory-sync";
 
 const FIXED_SIZES = ["S", "M", "L", "XL"];
 
+type BackendProduct = {
+  id: number;
+  name: string;
+  base_price?: number;
+};
+
 // SKU two-digit code -> Russian city label (fallback to "Астана")
 const SKU_CITY_LABEL: Record<string, string> = {
-  "01": "Орал",
-  "02": "Атырау",
-  "03": "Актау",
-  "04": "Актобе",
-  "05": "Костанай",
-  "06": "Петропавл",
-  "07": "Кокшетау",
-  "08": "Павлодар",
-  "09": "Астана",
-  "12": "Караганда",
-  "13": "Семей",
-  "14": "Усть-Каменогорск",
-  "15": "Кызылорда",
-  "16": "Туркестан",
-  "17": "Шымкент",
-  "19": "Тараз",
-  "20": "Алматы",
-  "22": "Талдыкорган"
+  "01": "Oral",
+  "02": "Atyrau",
+  "03": "Aktau",
+  "04": "Aktobe",
+  "05": "Kostanay",
+  "06": "Petropavl",
+  "07": "Kokshetau",
+  "08": "Pavlodar",
+  "09": "Astana",
+  "12": "Karaganda",
+  "13": "Semey",
+  "14": "Oskemen",
+  "15": "Kyzylorda",
+  "16": "Turkistan",
+  "17": "Shymkent",
+  "19": "Taraz",
+  "20": "Almaty",
+  "22": "Taldykorgan"
 };
 
 function cityLabelFromSku(sku: string): string {
-  if (!sku || sku.length < 2) return "Астана";
+  if (!sku || sku.length < 2) return "Astana";
   const last2 = sku.slice(-2);
-  return SKU_CITY_LABEL[last2] || "Астана";
+  return SKU_CITY_LABEL[last2] || "Astana";
 }
 
 const emptyDraft = (): StockPositionInput => ({
@@ -44,24 +47,23 @@ const emptyDraft = (): StockPositionInput => ({
   sku: "",
   color: "Black",
   size: "M",
-  selectedCityId: CITY_PRINT_ASSETS[0]?.id ?? "astana",
+  selectedCityId: CITY_PRINT_ASSETS.find((city) => city.id === "astana")?.id ?? "astana",
   quantity: 0,
   price: null,
   productRef: ""
 });
 
-function draftFromProduct(product: Product | undefined, base: StockPositionInput): StockPositionInput {
+function draftFromProduct(product: BackendProduct | undefined, base: StockPositionInput): StockPositionInput {
   if (!product) return base;
-  const color = product.colors.includes(base.color) ? base.color : product.colors[0] ?? "";
   return {
     product_id: base.product_id,
-    productName: base.productName,
+    productName: base.productName || product.name,
     sku: base.sku,
-    color,
+    color: base.color || "Black",
     size: FIXED_SIZES.includes(base.size) ? base.size : "M",
     selectedCityId: CITY_PRINT_ASSETS.some((c) => c.id === base.selectedCityId)
       ? base.selectedCityId
-      : CITY_PRINT_ASSETS[0]?.id ?? "astana",
+      : CITY_PRINT_ASSETS.find((city) => city.id === "astana")?.id ?? "astana",
     quantity: base.quantity,
     price: base.price,
     productRef: base.productRef
@@ -69,42 +71,34 @@ function draftFromProduct(product: Product | undefined, base: StockPositionInput
 }
 
 export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
-  const { products } = useDemoStore();
-  const [backendProducts, setBackendProducts] = useState<Array<any>>([]);
+  const [backendProducts, setBackendProducts] = useState<BackendProduct[]>([]);
   const [variants, setVariants] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(false);
+  const [loadMessage, setLoadMessage] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [formMessage, setFormMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [addDraft, setAddDraft] = useState<StockPositionInput>(() => {
-    const p = products[0];
-    return draftFromProduct(p, {
+    return {
       ...emptyDraft(),
-      product_id: p?.id ?? "",
       quantity: 50,
       productName: "",
       sku: ""
-    });
+    };
   });
   const [editSku, setEditSku] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<StockPositionInput>(emptyDraft());
   const [editingQuantitySku, setEditingQuantitySku] = useState<string | null>(null);
   const [editingQuantityValue, setEditingQuantityValue] = useState<number>(0);
 
-  const titleById = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const p of products) m.set(p.id, p.title);
-    return m;
-  }, [products]);
-
   const backendTitleById = useMemo(() => {
     const m = new Map<number, string>();
-    for (const p of backendProducts) m.set(Number(p.id), p.title ?? String(p.id));
+    for (const p of backendProducts) m.set(Number(p.id), p.name || String(p.id));
     return m;
   }, [backendProducts]);
 
   const selectedProduct = useMemo(
-    () => products.find((p) => String(p.id) === String(addDraft.product_id)),
-    [products, addDraft.product_id]
+    () => backendProducts.find((p) => String(p.id) === String(addDraft.product_id)),
+    [backendProducts, addDraft.product_id]
   );
 
   const addCanonicalSku = useMemo(() => {
@@ -114,8 +108,8 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
   }, [selectedProduct, addDraft.color, addDraft.size, addDraft.product_id]);
 
   const editProduct = useMemo(
-    () => products.find((p) => String(p.id) === String(editDraft.product_id)),
-    [products, editDraft.product_id]
+    () => backendProducts.find((p) => String(p.id) === String(editDraft.product_id)),
+    [backendProducts, editDraft.product_id]
   );
 
   const editCanonicalSku = useMemo(() => {
@@ -124,30 +118,37 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
   }, [editProduct, editDraft.color, editDraft.size, editDraft.product_id]);
 
   useEffect(() => {
-    // fetch backend product catalog for authoritative ids and titles
     (async () => {
-      try {
-        const res = await apiGet("/products");
-        if (res.ok && Array.isArray(res.data)) {
-          setBackendProducts(res.data);
-        }
-      } catch (e) {
-        // ignore
+      const res = await productsApi.list();
+      if (res.ok && Array.isArray(res.data)) {
+        const nextProducts = res.data.map((row: any) => ({
+          id: Number(row.id),
+          name: String(row.name ?? row.title ?? row.id),
+          base_price: Number(row.base_price ?? 0)
+        }));
+        setBackendProducts(nextProducts);
+        setLoadMessage(null);
+        setAddDraft((d) => {
+          if (nextProducts.some((p) => String(p.id) === String(d.product_id))) return d;
+          const first = nextProducts[0];
+          return draftFromProduct(first, {
+            ...d,
+            product_id: first ? String(first.id) : "",
+            productName: first?.name ?? ""
+          });
+        });
+      } else {
+        setBackendProducts([]);
+        setLoadMessage(res.message || res.error || "Не удалось загрузить каталог из backend.");
       }
     })();
-
-    if (!products.length) return;
-    setAddDraft((d) => {
-      if (products.find((p) => String(p.id) === String(d.product_id))) return d;
-      return draftFromProduct(products[0], { ...d, product_id: products[0]!.id });
-    });
-  }, [products]);
+  }, []);
 
   const rows = useMemo(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return variants;
     return variants.filter((r) => {
-      const title = (backendTitleById.get(Number(r.product_id)) ?? titleById.get(String(r.product_id)) ?? "").toLowerCase();
+      const title = (backendTitleById.get(Number(r.product_id)) ?? "").toLowerCase();
       const cityLabel = cityLabelFromId(r.selectedCityId || "")?.toLowerCase() || "";
       return (
         (r.sku || "").toLowerCase().includes(q) ||
@@ -159,7 +160,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
         cityLabel.includes(q)
       );
     });
-  }, [variants, filter, titleById, backendTitleById]);
+  }, [variants, filter, backendTitleById]);
 
   const fetchVariants = useCallback(async () => {
     setLoading(true);
@@ -177,12 +178,16 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
           stock_quantity: v.stock_quantity,
           updatedAt: v.updated_at ?? null,
           selectedCityId: v.selected_city_id ?? "astana",
-          inventoryProductName: (backendTitleById.get(Number(v.product_id)) ?? titleById.get(String(v.product_id))) || ""
+          inventoryProductName: backendTitleById.get(Number(v.product_id)) || ""
         }))
       );
+      setLoadMessage(null);
+    } else {
+      setVariants([]);
+      setLoadMessage(res.message || res.error || "Не удалось загрузить склад из backend.");
     }
     setLoading(false);
-  }, [titleById, backendTitleById]);
+  }, [backendTitleById]);
 
   useEffect(() => {
     fetchVariants();
@@ -200,7 +205,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
       setEditSku(sku);
       setEditDraft({
         product_id: row.product_id,
-          productName: row.inventoryProductName || backendTitleById.get(Number(row.product_id)) || titleById.get(String(row.product_id)) || "",
+        productName: row.inventoryProductName || backendTitleById.get(Number(row.product_id)) || "",
         sku: row.sku,
         color: row.color,
         size: row.size,
@@ -211,7 +216,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
       });
       setFormMessage(null);
     },
-    [variants, titleById, backendTitleById]
+    [variants, backendTitleById]
   );
 
   const onAddSubmit = useCallback(
@@ -225,7 +230,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
           setFormMessage({ tone: "err", text: `Товар с ID ${addDraft.product_id} не найден в каталоге` });
           return;
         }
-        const prod = products.find((p) => Number(p.id) === productId);
+        const prod = backendProducts.find((p) => Number(p.id) === productId);
         try {
           const payload = {
             product_id: productId,
@@ -242,7 +247,8 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
             setAddDraft(
               draftFromProduct(prod, {
                 ...emptyDraft(),
-                product_id: prod.id,
+                product_id: prod ? String(prod.id) : "",
+                productName: prod?.name ?? "",
                 quantity: 50
               })
             );
@@ -254,7 +260,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
         }
       })();
     },
-    [addDraft, products, fetchVariants, backendTitleById]
+    [addDraft, backendProducts, fetchVariants, backendTitleById]
   );
 
   const setStockQuantity = useCallback(
@@ -286,7 +292,19 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
           setFormMessage({ tone: "err", text: "Variant not found" });
           return;
         }
-        const res = await productVariantsApi.update(found.id, { stock_quantity: editDraft.quantity });
+        const productId = Number(editDraft.product_id);
+        if (!backendTitleById.has(productId)) {
+          setFormMessage({ tone: "err", text: `Товар с ID ${editDraft.product_id} не найден в backend-каталоге` });
+          return;
+        }
+        const res = await productVariantsApi.update(found.id, {
+          product_id: productId,
+          size: editDraft.size,
+          color: editDraft.color,
+          sku: editDraft.sku.trim().toUpperCase(),
+          price: editDraft.price !== null ? Number(editDraft.price) : null,
+          stock_quantity: Number(editDraft.quantity || 0)
+        });
         if (res.ok && res.data) {
           setFormMessage({ tone: "ok", text: "Сохранено" });
           await fetchVariants();
@@ -296,13 +314,8 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
         }
       })();
     },
-    [editSku, editDraft, variants, cancelEdit, fetchVariants]
+    [editSku, editDraft, variants, cancelEdit, fetchVariants, backendTitleById]
   );
-
-  const sizeOptionsFor = (p: Product | undefined) => {
-    if (!p) return [];
-    return p.sizes.filter((s) => !p.unavailableSizes?.includes(s));
-  };
 
   return (
     <div className="mb-10 border-t border-white/[0.08] pt-10">
@@ -322,6 +335,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
           {formMessage.text}
         </p>
       ) : null}
+      {loadMessage ? <p className="mt-4 text-xs text-red-300">{loadMessage}</p> : null}
 
       <form
         onSubmit={onAddSubmit}
@@ -369,7 +383,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
             <span className="mt-1 block text-[9px] text-red-300/90">ID не найден в каталоге.</span>
           ) : (
             <span className="mt-1 block text-[9px] text-mist">
-              {backendTitleById.get(Number(addDraft.product_id)) ?? (selectedProduct ? selectedProduct.title : "ID товара для связи с каталогом")}
+              {backendTitleById.get(Number(addDraft.product_id)) ?? "ID товара для связи с backend-каталогом"}
             </span>
           )}
         </label>
@@ -383,7 +397,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
             className="mt-2 w-full border border-white/[0.14] bg-ink px-2 py-2 text-xs text-fog"
           />
           <datalist id="product-colors-add">
-            {(selectedProduct?.colors ?? []).map((c) => (
+            {["Black", "White", "Базовый"].map((c) => (
               <option key={c} value={c} />
             ))}
           </datalist>
@@ -503,7 +517,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
                 className="mt-2 w-full border border-white/[0.14] bg-ink px-2 py-2 text-xs text-fog"
               />
               <datalist id="product-colors-edit">
-                {(editProduct?.colors ?? []).map((c) => (
+                {["Black", "White", "Базовый"].map((c) => (
                   <option key={c} value={c} />
                 ))}
               </datalist>
@@ -591,7 +605,7 @@ export const AdminInventoryPanel = memo(function AdminInventoryPanel() {
             {rows.slice(0, 400).map((row) => (
               <tr key={row.sku} className="border-b border-white/[0.05] bg-ink/40">
                 <td className="px-3 py-2 text-fog">
-                  {(backendTitleById.get(Number(row.product_id)) ?? titleById.get(String(row.product_id))) || row.inventoryProductName || row.product_id}
+                  {backendTitleById.get(Number(row.product_id)) || row.inventoryProductName || row.product_id}
                 </td>
                 <td className="px-3 py-2 font-mono text-[10px]">{row.sku}</td>
                 <td className="px-3 py-2">

@@ -8,13 +8,27 @@ import { SiteHeader } from "@/components/site-header";
 import { useDemoStore } from "@/components/demo-provider";
 import { ambPath, getAmbassadorBySlug } from "@/lib/demo-store";
 
+const COLLECTION_ORDER = [
+  "astana-line",
+  "nomad-track",
+  "scholar-core",
+  "almaty-classic",
+  "steppe-crest",
+  "school-unity",
+  "city-shell",
+  "aurora-knit"
+];
+
 function ShopCollectionInner() {
   const reduceMotion = useReducedMotion();
   const router = useRouter();
   const searchParams = useSearchParams();
   const club = searchParams.get("club");
   const { products, ambassadors } = useDemoStore();
-  const visibleProducts = products.slice(0, 8);
+  const visibleProducts = COLLECTION_ORDER.flatMap((id) => {
+    const product = products.find((item) => item.id === id);
+    return product ? [product] : [];
+  });
 
   useEffect(() => {
     if (!club) return;

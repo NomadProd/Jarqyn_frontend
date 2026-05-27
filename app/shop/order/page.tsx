@@ -19,7 +19,7 @@ export default function OrderPage() {
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
-  const paymentRedirectUrl = process.env.NEXT_PUBLIC_PAYMENT_REDIRECT_URL || "";
+  const paymentRedirectUrl = "https://pay.kaspi.kz/pay/76elakvz";
 
   const total = useMemo(() => cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0), [cart]);
 

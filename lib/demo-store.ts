@@ -410,6 +410,27 @@ export function ensureUniqueAmbassadorSlug(list: Ambassador[], slug: string, exc
 }
 
 const defaultCityPrints: NonNullable<Product["cityPrints"]> = cityPrintsForProducts();
+const collectionPhoto = (fileName: string) => `/www/photos/collections/${fileName}`;
+const collectionPhotos: Record<string, string[]> = {
+  "01": ["01-1.jpg", "01-3.png", "01-4.jpg"].map(collectionPhoto),
+  "02": ["02-2.jpg", "02-3.jpg", "02-6.jpg", "02-8.jpg", "02-9.png"].map(collectionPhoto),
+  "03": ["03-IMG_8007.jpg", "03-NU253.jpg", "03-NU39.jpg", "03-NU5.jpg", "03-NU58.jpg"].map(collectionPhoto),
+  "041": ["041-NU122.jpg", "041-NU132.jpg", "041-NU69.jpg", "041-NU73.jpg"].map(collectionPhoto),
+  "042": ["042-IMG_0842.jpg", "042-IMG_0843.jpg", "042-NU179.jpg", "042-NU215.jpg", "042-NU234.jpg"].map(collectionPhoto),
+  "051": ["051-IMG_7738.jpg", "051-DSC07877.jpg", "051-DSC07905.jpg", "051-DSC07949.jpg", "051-NU19.jpg"].map(collectionPhoto),
+  "052": ["052-EXPO59.jpg", "052-DSC08223.jpg", "052-EXPO43.jpg", "052-EXPO61.jpg"].map(collectionPhoto),
+  "06": [
+    "06-IMG_7734.jpg",
+    "06-DSC08114.jpg",
+    "06-IMG_7727.jpg",
+    "06-NU168.jpg",
+    "06-NU204.jpg",
+    "06-Снимок экрана 2026-05-27 213009.png"
+  ].map(collectionPhoto),
+  "07": ["07-IMG_7999.jpg", "07-20260206_232048.jpg", "07-IMG_8005.jpg"].map(collectionPhoto),
+  "08": ["08-EXPO5.jpg", "08-DSC08161.jpg", "08-EXPO88.jpg", "08-IMG_7998.jpg"].map(collectionPhoto)
+};
+const photosForSku = (sku: string) => collectionPhotos[sku] ?? collectionPhotos[sku.slice(0, 2)] ?? [];
 
 export const defaultProducts: Product[] = [
   {
@@ -421,10 +442,10 @@ export const defaultProducts: Product[] = [
     colors: ["Тёмно-синий", "Чёрный",],
     sizes: ["S", "M", "L", "XL"],
     position: "Верхняя одежда",
-    image: "/www/photos/solo/01.jpg",
+    image: photosForSku("041")[0]!,
     imagesByColor: {
-      "Тёмно-синий": ["/www/photos/solo/01.jpg", "/www/photos/solo/04.jpg"],
-      "Чёрный": ["/www/photos/solo/01.jpg", "/www/photos/solo/04.jpg"]
+      "Тёмно-синий": photosForSku("041"),
+      "Чёрный": photosForSku("042")
     },
     customizable: true,
     skuCode: "04",
@@ -452,21 +473,19 @@ export const defaultProducts: Product[] = [
     title: "ПОЛУЗАМОК",
     subtitle: "Мягкий слой для долгих дней и ясных целей.",
     price: 17990,
-    colors: ["Темно-синий", "Черный", "Тёмно-зелёный"],
+    colors: ["Темно-синий", "Черный"],
     sizes: ["S", "M", "L", "XL"],
     position: "Трикотаж",
-    image: "/www/photos/solo/03.jpg",
+    image: photosForSku("051")[0]!,
     imagesByColor: {
-      "Темно-синий": ["/www/photos/solo/03.jpg", "/www/photos/team/01.jpg"],
-      "Черный": ["/www/photos/solo/03.jpg", "/www/photos/team/01.jpg"],
-      "Тёмно-зелёный": ["/www/photos/solo/03.jpg", "/www/photos/team/01.jpg"]
+      "Темно-синий": photosForSku("051"),
+      "Черный": photosForSku("052")
     },
     customizable: true,
     skuCode: "05",
     colorSkus: {
       "Темно-синий": "051",
-      "Черный": "052",
-      "Тёмно-зелёный": "053"
+      "Черный": "052"
     },
     cityPrints: defaultCityPrints,
     description: "Плотный свитшот из смесовой пряжи для базовых и многослойных образов. Символ “Шексіз Өркен”, на воротнике — четвёртая строка гимна, удобное и официальное дополнение к пиджаку.",
@@ -489,26 +508,19 @@ export const defaultProducts: Product[] = [
     title: "Худи",
     subtitle: "Единый ритм поколения — без шума, только присутствие.",
     price: 18990,
-    colors: ["Темно-синий", "Чёрный", "Темно-зеленый"],
+    colors: ["Темно-синий", "Чёрный"],
     sizes: ["S", "M", "L", "XL"],
     position: "Худи",
-    image: "/www/photos/solo/07.jpg",
+    image: photosForSku("06")[0]!,
     imagesByColor: {
-      "Темно-синий": ["/www/photos/solo/07.jpg", "/www/photos/solo/08.jpg"],
-      "Чёрный": ["/www/photos/solo/07.jpg", "/www/photos/solo/08.jpg"],
-      "Темно-зеленый": ["/www/photos/solo/07.jpg",  "/www/photos/solo/08.jpg"]
-    },
-    backImageByColor: {
-      "Темно-синий": "/www/photos/solo/08.jpg",
-      "Черный": "/www/photos/solo/08.jpg",
-      "Темно-зеленый": "/www/photos/solo/08.jpg"
+      "Темно-синий": photosForSku("06"),
+      "Чёрный": photosForSku("06")
     },
     customizable: true,
     skuCode: "06",
     colorSkus: {
       "Темно-синий": "061",
-      "Чёрный": "062",
-      "Темно-зеленый": "063"
+      "Чёрный": "062"
     },
     cityPrints: defaultCityPrints,
     description: "Худи свободного кроя с мягкой изнанкой для ежедневного ритма кампуса и города. на груди — крупный символ “Шексіз Өркен” — знак бесконечного процветания, на спине — карта Казахстана с 20 городами: 18 белых (действующие НЗМ), 2 серых (потенциальные), город покупателя выделяется красной меткой. на капюшоне — пятая строка гимна. престиж вне школы.",
@@ -532,9 +544,9 @@ export const defaultProducts: Product[] = [
     colors: ["Белый"],
     sizes: ["S", "M", "L", "XL"],
     position: "Футболки",
-    image: "/www/photos/team/03.jpg",
+    image: photosForSku("03")[0]!,
     imagesByColor: {
-      "Белый": ["/www/photos/team/03.jpg", "/www/photos/team/13.jpg", "/www/photos/team/14.jpg"]
+      "Белый": photosForSku("03")
     },
     customizable: true,
     skuCode: "03",
@@ -561,9 +573,9 @@ export const defaultProducts: Product[] = [
     colors: ["Белый"],
     sizes: ["S", "M", "L", "XL"],
     position: "Рубашки",
-    image: "/www/photos/solo/06.jpg",
+    image: photosForSku("01")[0]!,
     imagesByColor: {
-      "Белый": ["/www/photos/solo/06.jpg"]
+      "Белый": photosForSku("01")
     },
     customizable: true,
     skuCode: "01",
@@ -588,9 +600,9 @@ export const defaultProducts: Product[] = [
     colors: ["Белый"],
     sizes: ["S", "M", "L", "XL"],
     position: "Рубашки",
-    image: "/www/photos/solo/05.jpg",
+    image: photosForSku("02")[0]!,
     imagesByColor: {
-      "Белый": ["/www/photos/solo/05.jpg"]
+      "Белый": photosForSku("02")
     },
     customizable: true,
     skuCode: "02",
@@ -609,27 +621,20 @@ export const defaultProducts: Product[] = [
   {
     id: "aurora-knit",
     slug: "aurora-knit",
-    title: "КАРДИГАН",
+    title: "ТЕДДИ",
     subtitle: "Тёплый минимализм с мягкой фактурой.",
     price: 18990,
-    colors: ["Темно-синий", "Черный", "Белый"],
+    colors: ["Темно-синий"],
     sizes: ["S", "M", "L", "XL"],
-    position: "Трикотаж",
-    image: "/www/photos/solo/09.jpg",
+    position: "Тедди",
+    image: photosForSku("08")[0]!,
     imagesByColor: {
-      "Темно-синий": ["/www/photos/solo/09.jpg", "/www/photos/team/04.jpg"],
-      "Черный": ["/www/photos/solo/09.jpg", "/www/photos/team/04.jpg"],
-      "Белый": ["/www/photos/solo/09.jpg", "/www/photos/team/04.jpg"]
+      "Темно-синий": photosForSku("08")
     },
     customizable: true,
-    skuCode: "07",
-    colorSkus: {
-      "Темно-синий": "071",
-      "Черный": "072",
-      "Белый": "073",
-    },
+    skuCode: "08",
     cityPrints: defaultCityPrints,
-    description: "Минималистичный силуэт без надписей, тёплая и удобная альтернатива школьному пиджаку.",
+    description: "Тёплый тедди без лишних надписей, удобная альтернатива школьному пиджаку.",
     specifications: "Loose fit, 100% хлопок",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Длина (см)", "Рукав (см)"],
@@ -644,20 +649,27 @@ export const defaultProducts: Product[] = [
   {
     id: "city-shell",
     slug: "city-shell",
-    title: "ВЕТРОВКА",
-    subtitle: "Ветровка для переменчивой погоды мегаполиса.",
+    title: "КАРДИГАН",
+    subtitle: "Кардиган для переменчивой погоды мегаполиса.",
     price: 17990,
-    colors: ["Темно-синий"],
+    colors: ["Темно-синий", "Черный", "Белый"],
     sizes: ["S", "M", "L", "XL"],
-    position: "Верхняя одежда",
-    image: "/www/photos/team/22.jpg",
+    position: "Трикотаж",
+    image: photosForSku("07")[0]!,
     imagesByColor: {
-      "Темно-синий": ["/www/photos/team/22.jpg", "/www/photos/team/04.jpg"]
+      "Темно-синий": photosForSku("07"),
+      "Черный": photosForSku("07"),
+      "Белый": photosForSku("07")
     },
     customizable: true,
-    skuCode: "08",
+    skuCode: "07",
+    colorSkus: {
+      "Темно-синий": "071",
+      "Черный": "072",
+      "Белый": "073",
+    },
     cityPrints: defaultCityPrints,
-    description: "Лёгкая ветровка с защитой от ветра и аккуратной матовой фактурой.",
+    description: "Кардиган с аккуратной матовой фактурой и чистым силуэтом.",
     specifications: "Молния: двусторонняя. Карманы: на молнии.",
     sizeChart: {
       headers: ["Размер", "Грудь (см)", "Талия (см)", "Длина (см)"],
@@ -712,9 +724,9 @@ function isOrderLineItem(item: unknown): item is OrderLineItem {
 
 function legacyProductToLineItem(p: Product): OrderLineItem {
   const cityId =
-    (Array.isArray(p.cityPrints) && p.cityPrints.length > 0 && p.cityPrints[0]?.city) ??
-    (Array.isArray(defaultCityPrints) && defaultCityPrints[0]?.city) ??
-    "astana";
+    Array.isArray(p.cityPrints) && p.cityPrints.length > 0
+      ? p.cityPrints[0]?.city ?? "astana"
+      : defaultCityPrints[0]?.city ?? "astana";
   const color = Array.isArray(p.colors) && p.colors.length > 0 ? p.colors[0] : "—";
   const size = Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes[0] : "—";
   return {

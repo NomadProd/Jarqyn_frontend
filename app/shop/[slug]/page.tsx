@@ -44,9 +44,7 @@ export default function ProductPage() {
   const colorOptions = product?.colors.length ? product.colors : ["Базовый"];
   const initialColor = colorOptions[0] ?? "";
   const imagesForColor = product ? product.imagesByColor?.[selectedColor] ?? [product.image] : [];
-  const fallbackBackImage = imagesForColor.length > 1 ? imagesForColor[imagesForColor.length - 1] : undefined;
-  const backImage = product?.backImageByColor?.[selectedColor] ?? fallbackBackImage;
-  const galleryImages = backImage && !imagesForColor.includes(backImage) ? [...imagesForColor, backImage] : imagesForColor;
+  const galleryImages = imagesForColor;
   const isSchoolUnityProduct = product?.id === "school-unity" || product?.title === "School Unity";
 
   useEffect(() => {
@@ -224,7 +222,6 @@ export default function ProductPage() {
             <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-5">
               {galleryImages.map((src) => {
                 const active = src === selectedImage;
-                const isBack = Boolean(backImage && src === backImage);
                 return (
                   <button
                     key={src}
@@ -235,14 +232,9 @@ export default function ProductPage() {
                     }`}
                     aria-label={`Показать фото ${product.title}`}
                     aria-pressed={active}
-                  >
+                    >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
-                    {isBack ? (
-                      <span className="absolute bottom-1 left-1 border border-white/25 bg-black/40 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-fog">
-                        Спина
-                      </span>
-                    ) : null}
                   </button>
                 );
               })}

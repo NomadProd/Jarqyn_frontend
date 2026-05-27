@@ -243,7 +243,7 @@ const initialState: StoredState = {
   favorites: [],
   orders: [createSeedDemoOrder()],
   cart: [],
-  selectedCityId: CITY_PRINT_ASSETS[1]?.id ?? "astana",
+  selectedCityId: CITY_PRINT_ASSETS.find((city) => city.id === "astana")?.id ?? "astana",
   heroContent: defaultHeroContent,
   manifestoContent: mergeManifestoContent(null),
   ambassadors: mergeAmbassadors(null),
@@ -279,10 +279,10 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
-      const selectedCityId =
-        typeof parsed.selectedCityId === "string" && parsed.selectedCityId
-          ? parsed.selectedCityId
-          : CITY_PRINT_ASSETS[1]?.id ?? "astana";
+      const savedCityId = typeof parsed.selectedCityId === "string" ? parsed.selectedCityId : "";
+      const selectedCityId = CITY_PRINT_ASSETS.some((city) => city.id === savedCityId)
+        ? savedCityId
+        : CITY_PRINT_ASSETS.find((city) => city.id === "astana")?.id ?? "astana";
 
       let user: DemoUser | null = null;
       if (parsed.user?.email) {
