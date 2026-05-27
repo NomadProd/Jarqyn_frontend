@@ -1,24 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { useDemoStore } from "@/components/demo-provider";
 import { cityLabelFromId } from "@/lib/city-catalog";
 import { cartApi } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/demo-store";
+import { clampToStock, getVariantStockQuantity } from "@/lib/variant-stock";
 
 export default function CartPage() {
   const { cart, removeCartLine, setCartLineQuantity, clearCart } = useDemoStore();
+  const [cartNotice, setCartNotice] = useState("");
 
   const total = cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
 
   const handleQuantityChange = async (lineId: string, quantity: number) => {
-    if (quantity < 1) quantity = 1;
     const line = cart.find((item) => item.lineId === lineId);
-    setCartLineQuantity(lineId, quantity);
-    if (line?.backendItemId) {
+    if (!line) return;
+
+    if (!line.variantId) {
+      const safeQuantity = Math.max(1, quantity);
+      setCartLineQuantity(lineId, safeQuantity);
+      setCartNotice("");
+      if (line.backendItemId) {
+        try {
+          await cartApi.updateItem(line.backendItemId, safeQuantity);
+        } catch (error) {
+          console.error("Failed to update cart item quantity", error);
+        }
+      }
+      return;
+    }
+
+    const stockProbe = await getVariantStockQuantity(line.variantId);
+    if (!stockProbe.ok) {
+      console.error("Failed to load variant stock", stockProbe.message);
+      setCartNotice("Не удалось проверить остаток на складе.");
+      return;
+    }
+    if (stockProbe.stockQuantity <= 0) {
+      setCartNotice("Товар отсутствует на складе.");
+      return;
+    }
+
+    const safeQuantity = clampToStock(quantity, stockProbe.stockQuantity);
+    setCartNotice(safeQuantity !== quantity ? `Максимум доступно ${stockProbe.stockQuantity}.` : "");
+    setCartLineQuantity(lineId, safeQuantity);
+    if (line.backendItemId) {
       try {
-        await cartApi.updateItem(line.backendItemId, quantity);
+        await cartApi.updateItem(line.backendItemId, safeQuantity);
       } catch (error) {
         console.error("Failed to update cart item quantity", error);
       }
@@ -118,6 +149,7 @@ export default function CartPage() {
               <div>
                 <p className="font-display text-[10px] uppercase tracking-[0.28em] text-mist">Итого</p>
                 <p className="mt-2 font-display text-xl uppercase tracking-tight text-brass">{formatCurrency(total)}</p>
+                {cartNotice ? <p className="mt-3 text-sm text-mist">{cartNotice}</p> : null}
               </div>
               <div className="flex flex-wrap gap-3">
                 <button

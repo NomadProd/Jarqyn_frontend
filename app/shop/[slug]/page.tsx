@@ -14,6 +14,7 @@ import { cityLabelFromId, cityPrintById } from "@/lib/city-catalog";
 import { cartApi, productVariantsApi } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/demo-store";
 import { computeLineSku } from "@/lib/order-utils";
+import { getVariantStockQuantity } from "@/lib/variant-stock";
 
 export default function ProductPage() {
   const params = useParams();
@@ -34,6 +35,7 @@ export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedImage, setSelectedImage] = useState("");
   const [printLoadFailed, setPrintLoadFailed] = useState(false);
+  const [stockMessage, setStockMessage] = useState("");
 
   const product = useMemo(
     () => products.find((item) => item.id === slug || item.slug === slug),
@@ -86,17 +88,29 @@ export default function ProductPage() {
 
   const isFavorite = favorites.includes(product.id);
 
-  const commitLine = async () => {
-    if (!size || !product) return;
+  const commitLine = async (): Promise<boolean> => {
+    if (!size || !product) return false;
 
     const computedSku = computeLineSku(product, selectedColor || initialColor, size, selectedCityId);
     const variantResponse = await productVariantsApi.getBySku(computedSku);
     if (!variantResponse.ok || !variantResponse.data?.id) {
       console.error("Unable to resolve variant for SKU", computedSku, variantResponse.error);
-      return;
+      setStockMessage("Не удалось проверить наличие товара.");
+      return false;
     }
 
     const variantId = variantResponse.data.id;
+    const stockProbe = await getVariantStockQuantity(variantId);
+    if (!stockProbe.ok) {
+      console.error("Unable to load variant stock", stockProbe.message);
+      setStockMessage("Не удалось проверить наличие товара.");
+      return false;
+    }
+    if (stockProbe.stockQuantity <= 0) {
+      setStockMessage("Товар отсутствует на складе.");
+      return false;
+    }
+
     const line = {
       productId: product.id,
       productName: product.title,
@@ -110,6 +124,7 @@ export default function ProductPage() {
       variantId
     };
 
+    setStockMessage("");
     addToCart(line);
 
     try {
@@ -129,16 +144,17 @@ export default function ProductPage() {
     } catch (error) {
       console.error("Failed to save item to backend cart", error);
     }
+    return true;
   };
 
   const handleGoCart = async () => {
-    await commitLine();
-    router.push("/shop/cart");
+    const ok = await commitLine();
+    if (ok) router.push("/shop/cart");
   };
 
   const handleCheckout = async () => {
-    await commitLine();
-    router.push("/shop/order");
+    const ok = await commitLine();
+    if (ok) router.push("/shop/order");
   };
 
   return (
@@ -208,6 +224,7 @@ export default function ProductPage() {
                       type="button"
                       onClick={() => {
                         setSelectedColor(color);
+                        setStockMessage("");
                         const nextImages = product.imagesByColor?.[color] ?? [product.image];
                         setSelectedImage(nextImages[0] ?? product.image);
                       }}
@@ -260,7 +277,10 @@ export default function ProductPage() {
                     <button
                       key={item}
                       type="button"
-                      onClick={() => setSize(item)}
+                      onClick={() => {
+                        setSize(item);
+                        setStockMessage("");
+                      }}
                       disabled={disabled}
                       className={`focus-ring min-w-[3rem] border px-4 py-2.5 font-display text-[11px] uppercase tracking-[0.18em] transition-colors ${
                         disabled
@@ -289,6 +309,7 @@ export default function ProductPage() {
                     onChange={(id) => {
                       setSelectedCityId(id);
                       setPrintLoadFailed(false);
+                      setStockMessage("");
                       if (backImage) setSelectedImage(backImage);
                     }}
                   />
@@ -370,10 +391,11 @@ export default function ProductPage() {
             </div>
 
             <div className="mt-12 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              {stockMessage ? <p className="text-sm text-mist">{stockMessage}</p> : null}
               <button
                 type="button"
                 onClick={handleCheckout}
-                disabled={!size}
+                disabled={!size || Boolean(stockMessage)}
                 className="focus-ring inline-flex justify-center border border-fog bg-fog px-10 py-4 font-display text-[11px] uppercase tracking-[0.26em] text-ink transition-colors hover:bg-transparent hover:text-fog disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-transparent disabled:text-mist"
               >
                 Оформить заказ
@@ -381,7 +403,7 @@ export default function ProductPage() {
               <button
                 type="button"
                 onClick={handleGoCart}
-                disabled={!size}
+                disabled={!size || Boolean(stockMessage)}
                 className="focus-ring inline-flex justify-center border border-white/[0.18] px-10 py-4 font-display text-[11px] uppercase tracking-[0.26em] text-fog transition-colors hover:border-fog disabled:cursor-not-allowed disabled:border-white/10 disabled:text-mist"
               >
                 В корзину

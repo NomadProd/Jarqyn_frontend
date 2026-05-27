@@ -303,6 +303,14 @@ export const productsApi = {
   }
 };
 
+export const categoriesApi = {
+  list: async (): Promise<ApiResponse<any>> => {
+    return request("/categories", {
+      method: "GET"
+    });
+  }
+};
+
 export const cartApi = {
   addItems: async (items: any[]): Promise<ApiResponse> => {
     return request("/carts", {
