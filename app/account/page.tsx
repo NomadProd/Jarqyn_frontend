@@ -14,9 +14,68 @@ import { CheckoutProcess } from "@/components/checkout-process";
 import { useDemoStore } from "@/components/demo-provider";
 import { compressImageToDataUrl } from "@/lib/client-image";
 import { cityLabelFromId } from "@/lib/city-catalog";
-import { authApi, tokenManager, type UserResponse } from "@/lib/api-client";
+import { authApi, tokenManager, cartApi, productVariantsApi, productsApi, type UserResponse } from "@/lib/api-client";
 import type { DemoOrder, OrderFulfillmentStatus } from "@/lib/demo-store";
 import { formatCurrency, Product } from "@/lib/demo-store";
+
+async function loadBackendCartAfterLogin(
+  syncCartLineWithBackend: (sku: string, variantId: number, backendItemId: number, quantity: number) => void,
+  addToCart: (line: any) => void,
+  selectedCityId: string
+) {
+  try {
+    const cartRes = await cartApi.getCurrentCart();
+    if (!cartRes.ok || !cartRes.data) {
+      console.log("No backend cart found or error fetching cart");
+      return;
+    }
+
+    const backendCart = cartRes.data;
+    if (!backendCart.items || backendCart.items.length === 0) {
+      console.log("Backend cart is empty");
+      return;
+    }
+
+    // For each cart item, fetch variant and product details
+    for (const item of backendCart.items) {
+      try {
+        const variantRes = await productVariantsApi.getById(item.variant_id);
+        if (!variantRes.ok || !variantRes.data) {
+          console.error(`Failed to fetch variant ${item.variant_id}`);
+          continue;
+        }
+
+        const variant = variantRes.data;
+        const productRes = await productsApi.getById(variant.product_id);
+        if (!productRes.ok || !productRes.data) {
+          console.error(`Failed to fetch product ${variant.product_id}`);
+          continue;
+        }
+
+        const product = productRes.data;
+        
+        // Create CartLineItem from backend data
+        addToCart({
+          productId: variant.product_id,
+          productName: product.name,
+          color: variant.color,
+          size: variant.size,
+          selectedCityId: selectedCityId,
+          quantity: item.quantity,
+          image: "/www/photos/solo/01.jpg", // Default image, could be enhanced with product images
+          unitPrice: variant.price || product.base_price,
+          sku: variant.sku,
+          variantId: item.variant_id,
+          backendItemId: item.id
+        });
+      } catch (error) {
+        console.error(`Failed to load backend cart item ${item.id}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load backend cart after login:", error);
+  }
+}
 
 function AdminOrderControls({
   orderId,
@@ -123,7 +182,11 @@ export default function AccountPage() {
     deleteOrder,
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    clearCart,
+    addToCart,
+    syncCartLineWithBackend,
+    selectedCityId
   } = useDemoStore();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -245,6 +308,9 @@ export default function AccountPage() {
         const tokenData = response.data as { access_token: string; token_type: string; refresh_token?: string };
         tokenManager.setToken(tokenData.access_token, tokenData.token_type, tokenData.refresh_token);
 
+        // Clear any stale demo cart state before loading authenticated session
+        clearCart();
+
         // Get user data
         const userResponse = await authApi.getCurrentUser();
         if (userResponse.ok && userResponse.data) {
@@ -255,6 +321,10 @@ export default function AccountPage() {
           setSurname("");
           setEmail("");
           setPassword("");
+          
+          // Load backend cart for authenticated user
+          await loadBackendCartAfterLogin(syncCartLineWithBackend, addToCart, selectedCityId);
+          
           router.push("/");
         }
       } else {
@@ -269,6 +339,7 @@ export default function AccountPage() {
 
   const handleSignOut = async () => {
     await authApi.logout();
+    clearCart();
     setUser(null);
     setIsAdmin(false);
     setMessage("");

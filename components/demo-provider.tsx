@@ -451,7 +451,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
         if (!match) return { ok: false, message: "Invalid email or password." };
         setState((prev) => ({
           ...prev,
-          user: userFromAccount(match)
+          user: userFromAccount(match),
+          cart: []
         }));
         return { ok: true, message: "Signed in." };
       },
@@ -474,11 +475,12 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
         setState((prev) => ({
           ...prev,
           user: userFromAccount(nextAccount),
-          accounts: [...prev.accounts, nextAccount]
+          accounts: [...prev.accounts, nextAccount],
+          cart: []
         }));
         return { ok: true, message: "Account created." };
       },
-      signOut: () => setState((prev) => ({ ...prev, user: null })),
+      signOut: () => setState((prev) => ({ ...prev, user: null, cart: [] })),
       toggleFavorite: (productId) =>
         setState((prev) => ({
           ...prev,

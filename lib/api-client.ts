@@ -4,7 +4,7 @@
  * Handles authentication tokens, error management, and request/response formatting
  */
 
-const API_BASE_URL = "https://jarqyn-backend.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const TOKEN_KEY = "access_token";
 const TOKEN_TYPE_KEY = "token_type";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -207,6 +207,12 @@ export const productVariantsApi = {
     });
   },
 
+  getById: async (variantId: number): Promise<ApiResponse<any>> => {
+    return request(`/product-variants/${variantId}`, {
+      method: "GET"
+    });
+  },
+
   list: async (params?: { product_id?: number; sku?: string }) => {
     return request(`/product-variants`, {
       method: "GET",
@@ -237,6 +243,61 @@ export const productVariantsApi = {
 
   delete: async (variantId: number) => {
     return request(`/product-variants/${variantId}`, {
+      method: "DELETE"
+    });
+  }
+};
+
+export const productsApi = {
+  list: async (params?: { category_id?: number }) => {
+    return request(`/products`, {
+      method: "GET",
+      params
+    });
+  },
+
+  getById: async (productId: number): Promise<ApiResponse<any>> => {
+    return request(`/products/${productId}`, {
+      method: "GET"
+    });
+  },
+
+  create: async (payload: {
+    category_id: number;
+    name: string;
+    description?: string;
+    brand?: string;
+    gender?: string;
+    base_price: number;
+    discount_price?: number | null;
+    is_active?: boolean;
+    is_discount_active?: boolean;
+  }) => {
+    return request(`/products`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  update: async (productId: number, payload: Partial<{
+    category_id: number;
+    name: string;
+    description: string;
+    brand: string;
+    gender: string;
+    base_price: number;
+    discount_price: number | null;
+    is_active: boolean;
+    is_discount_active: boolean;
+  }>) => {
+    return request(`/products/${productId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  delete: async (productId: number) => {
+    return request(`/products/${productId}`, {
       method: "DELETE"
     });
   }
